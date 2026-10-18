@@ -63,6 +63,8 @@ public final class Client {
         return try owned(out)
     }
     public func lease() throws -> Any {try call("lease")}
+    /// Explicit bounded renewal; scheduling and safe work cancellation belong to the caller.
+    public func heartbeat(_ module:String) throws -> Any {try call("heartbeat",["module":try checked(module)])}
     public func require(_ module:String) throws -> Any {try call("require",["module":try checked(module)])}
     public func status() throws -> Any {try call("status")}
     public func signIn(timeout:Double=0) throws -> Any {try call("sign_in",["timeout":timeout])}
