@@ -37,10 +37,10 @@ public final class Client {
     private let callbackState:CallbackState
     private let lock=NSRecursiveLock()
     private var busy=false
-    public init(product:String,keys:[String:String],version:String="",server:String?=nil,directory:String?=nil,caBundle:String?=nil,callbacks:Callbacks=Callbacks()) throws {
+    public init(product:String,keys:[String:String],version:String="",server:String?=nil,directory:String?=nil,caBundle:String?=nil,enrolToken:String?=nil,callbacks:Callbacks=Callbacks()) throws {
         callbackState=CallbackState(callbacks)
         var options:[String:Any] = ["product":try checked(product),"keys":keys,"version":try checked(version)]
-        if let value=server{options["server"]=try checked(value)};if let value=directory{options["directory"]=try checked(value)};if let value=caBundle{options["ca_bundle"]=try checked(value)}
+        if let value=server{options["server"]=try checked(value)};if let value=directory{options["directory"]=try checked(value)};if let value=caBundle{options["ca_bundle"]=try checked(value)};if let value=enrolToken{options["enrol_token"]=try checked(value)}
         var cb=lb_callbacks();cb.context=Unmanaged.passUnretained(callbackState).toOpaque()
         if callbacks.onSignIn != nil {cb.on_sign_in={p,u,c in let s=state(p);do{try s.callbacks.onSignIn?(text(u),text(c))}catch{s.error=error}}}
         if callbacks.clock != nil {cb.clock={p in let s=state(p);do{let n=try s.callbacks.clock!();guard n.isFinite else{throw LicenseboxError("invalid_argument","Invalid clock")};return n}catch{s.error=error;return 0}}}
@@ -73,6 +73,11 @@ public final class Client {
     public func requests() throws -> Any {try call("requests")}
     public func requestAccess(_ modules:[String],note:String="") throws -> Any {try call("request",["modules":modules,"note":try checked(note)])}
     public func accessLink() throws -> String {guard let v=try call("access-link") as? String else{throw LicenseboxError("protocol_error")};return v}
+    /// Service accounts and floating copies: require checks a floating module out
+    /// by itself; enrolToken (else LICENSEBOX_ENROL_TOKEN) enrols on first lease.
+    public func enrol(token:String) throws -> Any {try call("enrol",["token":try checked(token)])}
+    public func checkout(_ module:String) throws -> Any {try call("checkout",["module":try checked(module)])}
+    public func checkin(_ modules:[String]=[]) throws {_ = try call("checkin",["modules":try modules.map{try checked($0)}])}
     public func record(command:String,success:Bool,elapsed:Double) throws {_ = try call("record",["command":try checked(command),"success":success,"elapsed":elapsed])}
 }
 public func deriveBinding(product:String,source:String,rawID:String) throws -> String {

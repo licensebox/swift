@@ -6,7 +6,7 @@ func run(_ r:[String:Any]) throws -> Any {
  if op=="native" {return try nativeBinding(product:p)}
  let keys=r["keys"] as! [String:String],now=(r["now"] as! NSNumber).doubleValue
  if op=="verify" {return try verifyLease(token:r["token"] as! String,product:p,keys:keys,now:now)}
- let c=try Client(product:p,keys:keys,version:"conformance",server:r["server"] as? String,directory:r["directory"] as? String,caBundle:r["ca_bundle"] as? String,callbacks:Callbacks(onSignIn:{_,_ in},clock:{now},machineBinding:{r["binding"] as? String ?? ""}))
+ let c=try Client(product:p,keys:keys,version:"conformance",server:r["server"] as? String,directory:r["directory"] as? String,caBundle:r["ca_bundle"] as? String,enrolToken:r["enrol_token"] as? String,callbacks:Callbacks(onSignIn:{_,_ in},clock:{now},machineBinding:{r["binding"] as? String ?? ""}))
  defer{try? c.close()}
  switch op {
  case "lease":return try c.lease()
@@ -22,6 +22,9 @@ func run(_ r:[String:Any]) throws -> Any {
  case "requests":return try c.requests()
  case "request":return try c.requestAccess(["export"],note:"café – test")
  case "access-link":return try c.accessLink()
+ case "enrol":return try c.enrol(token:r["token"] as? String ?? "")
+ case "checkout":return try c.checkout(r["module"] as? String ?? "")
+ case "checkin":try c.checkin([r["module"] as? String ?? ""]);return NSNull()
  case "record":try c.record(command:"export",success:true,elapsed:0.125);try c.record(command:"export",success:false,elapsed:0.025);return NSNull()
  default:throw LicenseboxError("invalid_argument")
  }
